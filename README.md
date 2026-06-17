@@ -41,10 +41,29 @@ Create `backend/.env`:
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5432/spur_chat
 OPENAI_API_KEY=sk-...
+DATABASE_SSL=false
 PORT=3001
 FRONTEND_URL=http://localhost:5173
 NODE_ENV=development
 ```
+
+For Supabase, use the database connection string from Project Settings -> Database, not the API keys.
+Replace `YOUR_DATABASE_PASSWORD` with the database password you set for the project:
+
+```env
+DATABASE_URL="postgresql://postgres:YOUR_DATABASE_PASSWORD@db.your-project-ref.supabase.co:5432/postgres"
+DATABASE_SSL=true
+OPENAI_API_KEY=sk-...
+PORT=3001
+FRONTEND_URL=http://localhost:5173
+NODE_ENV=development
+```
+
+If the password contains URL characters like `@`, `#`, `%`, `/`, `?`, or `:`, URL-encode them before putting it into `DATABASE_URL`.
+For example, `@` becomes `%40` and `#` becomes `%23`.
+
+Common Supabase mistake: leaving `[YOUR-PASSWORD]` or `YOUR_DATABASE_PASSWORD` in the URL causes `password authentication failed for user "postgres"`.
+Use the database password, not your Supabase login password and not the anon/service-role API key.
 
 Create `frontend/.env`:
 
@@ -54,9 +73,17 @@ VITE_API_URL=http://localhost:3001
 
 ### Create Database And Run Migration
 
+If using local PostgreSQL, create the database first:
+
 ```bash
 createdb spur_chat
+```
 
+If using Supabase, skip `createdb`; Supabase already created the `postgres` database for you.
+
+Then run the migration from the backend folder:
+
+```bash
 cd backend
 npm run migrate
 ```

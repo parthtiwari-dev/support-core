@@ -2,17 +2,12 @@ import 'dotenv/config';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { Pool } from 'pg';
-
-function requireEnv(key: string): string {
-  const value = process.env[key];
-  if (!value) throw new Error(`Missing required env var: ${key}`);
-  return value;
-}
+import { config } from '../config';
 
 async function main(): Promise<void> {
   const pool = new Pool({
-    connectionString: requireEnv('DATABASE_URL'),
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    connectionString: config.databaseUrl,
+    ssl: config.databaseSsl,
   });
 
   const migrationPath = path.resolve(process.cwd(), 'src/db/migrations/001_init.sql');
