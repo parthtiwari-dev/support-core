@@ -1,0 +1,183 @@
+# Spur Chat - AI Support Agent
+
+AI-powered live chat widget for Lumio, a fictional D2C smart home lighting brand.
+Users can ask about products, shipping, returns, refunds, warranty, discounts, and support.
+Conversations persist across reloads by storing a session ID in `localStorage` and loading history from PostgreSQL.
+
+Live demo: not deployed yet  
+Backend: not deployed yet
+
+## Tech Stack
+
+- Frontend: React, Vite, TypeScript
+- Backend: Node.js, Express, TypeScript
+- Database: PostgreSQL
+- LLM: OpenAI GPT-4o-mini with SSE streaming
+- Deployment target: Railway for backend and database, Vercel for frontend
+
+## Local Setup
+
+### Prerequisites
+
+- Node.js 20+
+- npm
+- PostgreSQL 14+
+- OpenAI API key
+
+### Install
+
+```bash
+cd backend
+npm install
+
+cd ../frontend
+npm install
+```
+
+### Configure Environment
+
+Create `backend/.env`:
+
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/spur_chat
+OPENAI_API_KEY=sk-...
+PORT=3001
+FRONTEND_URL=http://localhost:5173
+NODE_ENV=development
+```
+
+Create `frontend/.env`:
+
+```env
+VITE_API_URL=http://localhost:3001
+```
+
+### Create Database And Run Migration
+
+```bash
+createdb spur_chat
+
+cd backend
+npm run migrate
+```
+
+The migration creates:
+
+- `conversations`
+- `messages`
+- indexes for conversation lookup and message ordering
+
+### Run Locally
+
+Terminal 1:
+
+```bash
+cd backend
+npm run dev
+```
+
+Terminal 2:
+
+```bash
+cd frontend
+npm run dev
+```
+
+Open `http://localhost:5173`.
+
+## Architecture
+
+```text
+Browser (React + Vite)
+  useChat hook
+    api.streamMessage() -> fetch POST -> ReadableStream
+    api.getHistory()    -> fetch GET  -> JSON
+
+Express (Node.js + TypeScript)
+  routes/       -> thin URL mapping
+  middleware/   -> validation, rate limiting, error handling
+  handlers/     -> HTTP lifecycle and SSE protocol
+  services/     -> conversation rules, context window, LLM calls
+  repositories/ -> PostgreSQL queries only
+  db/           -> pg pool and migrations
+
+PostgreSQL stores conversations/messages.
+OpenAI streams assistant replies through the backend.
+```
+
+Layer contract:
+
+- `routes/` maps URLs only.
+- `handlers/` owns Express request/response and SSE writes.
+- `services/` owns business rules and never touches `req` or `res`.
+- `repositories/` owns SQL and contains no business logic.
+- `llm.service.ts` exposes an async generator; the handler writes chunks to the stream.
+
+## LLM Notes
+
+- Provider: OpenAI
+- Model: `gpt-4o-mini`
+- Streaming: Server-Sent Events over `fetch()` and `ReadableStream`
+- Max response tokens: 500
+- System prompt: hardcoded Lumio support policy and product knowledge
+- Context window: last 10 messages or 12,000 characters, whichever is smaller
+
+The context window is intentionally character-capped. Older messages are dropped to keep cost and latency predictable. The 12,000 character budget is roughly 3,000 tokens.
+
+## Error Handling
+
+The app separates failures by phase:
+
+- DB or setup failure before SSE starts: normal JSON error response
+- LLM/provider failure after SSE starts: SSE `error` event
+- Stale or invalid history session: backend `404`, frontend clears `localStorage` and starts fresh
+
+Named LLM failure modes:
+
+| Error type | User-facing behavior |
+| --- | --- |
+| `TIMEOUT` | "Lumi is taking too long to respond. Please try again." |
+| `RATE_LIMIT` | "Too many requests right now. Please wait a moment and try again." |
+| `AUTH_FAILURE` | "Support is temporarily unavailable. Please email support@lumio.in." |
+| `PROVIDER_DOWN` | "Lumi is temporarily down. Email support@lumio.in for urgent queries." |
+| `UNKNOWN` | "Something went wrong. Please try again." |
+
+## Roadmap Checklist Status
+
+- Failure taxonomy: implemented in `llm.service.ts`
+- Context window budget: implemented in `buildContextWindow`
+- Request deduplication: implemented with `useRef` in `useChat`
+- Session persistence across reload: implemented with `localStorage` and history fetch
+- SSE buffering: implemented in `frontend/src/services/api.ts`
+- DB error vs LLM error: separated before and after SSE starts
+- Clean 4-layer architecture: routes, handlers, services, repositories
+- Input validation: middleware handles missing, non-string, empty, whitespace-only, and too-long messages
+- Invalid session recovery: history endpoint returns 404, frontend clears stale session
+- Streaming typing indicator: tied to active stream state
+
+## Trade-offs
+
+- Rate limiting is in-memory. It resets on server restart and is not shared across instances. Production should use Redis.
+- There is no authentication. The `sessionId` is the only identity, which is fine for a demo but not for a real customer portal.
+- System prompt and Lumio knowledge are hardcoded. A production version should store brand configuration in the database.
+- History loads all messages for a session. Pagination is unnecessary for the demo but would be needed later.
+- There are no automated tests yet. The next useful tests would cover validation, context-window trimming, stale-session recovery, and SSE parsing.
+
+## Deployment Notes
+
+Backend on Railway:
+
+- Set root directory to `backend`
+- Add PostgreSQL
+- Set `DATABASE_URL`, `OPENAI_API_KEY`, `FRONTEND_URL`, and `NODE_ENV=production`
+- Run `npm run build`
+- Start with `npm start`
+- Run migrations with `npm run migrate`
+
+Frontend on Vercel:
+
+- Set root directory to `frontend`
+- Set `VITE_API_URL` to the Railway backend URL
+- Deploy normally
+
+After deploying the frontend, update Railway `FRONTEND_URL` to the Vercel URL.
