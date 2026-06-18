@@ -32,6 +32,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
         value={text}
         onChange={(event) => setText(event.target.value)}
         onKeyDown={handleKeyDown}
+        aria-label="Message input"
         placeholder="Ask Lumi anything..."
         disabled={disabled}
         rows={1}

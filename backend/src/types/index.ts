@@ -9,6 +9,7 @@ export interface Message {
   conversation_id: string;
   sender: 'user' | 'ai';
   text: string;
+  feedback: 'up' | 'down' | null;
   created_at: string;
 }
 
@@ -21,5 +22,5 @@ export interface LLMError {
 
 export type SSEEvent =
   | { type: 'chunk'; content: string }
-  | { type: 'done'; sessionId: string }
+  | { type: 'done'; sessionId: string; message: Message }
   | { type: 'error'; errorType: LLMErrorType; message: string };

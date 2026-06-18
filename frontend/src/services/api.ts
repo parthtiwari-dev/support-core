@@ -4,7 +4,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 interface StreamCallbacks {
   onChunk: (chunk: string) => void;
-  onDone: (sessionId: string) => void;
+  onDone: (sessionId: string, message: ChatMessage) => void;
   onError: (message: string) => void;
 }
 
@@ -12,7 +12,18 @@ interface HistoryMessageResponse {
   id: string;
   sender: 'user' | 'ai';
   text: string;
+  feedback: 'up' | 'down' | null;
   created_at: string;
+}
+
+function mapMessage(message: HistoryMessageResponse): ChatMessage {
+  return {
+    id: message.id,
+    sender: message.sender,
+    text: message.text,
+    feedback: message.feedback,
+    timestamp: message.created_at,
+  };
 }
 
 export const api = {
@@ -82,7 +93,7 @@ export const api = {
             callbacks.onChunk(event.content);
           } else if (event.type === 'done') {
             completed = true;
-            callbacks.onDone(event.sessionId);
+            callbacks.onDone(event.sessionId, mapMessage(event.message));
             return;
           } else if (event.type === 'error') {
             completed = true;
@@ -105,11 +116,25 @@ export const api = {
     if (!response.ok) throw new Error('Session not found');
 
     const data = await response.json();
-    return data.messages.map((message: HistoryMessageResponse): ChatMessage => ({
-      id: message.id,
-      sender: message.sender,
-      text: message.text,
-      timestamp: message.created_at,
-    }));
+    return data.messages.map(mapMessage);
+  },
+
+  async submitFeedback(
+    messageId: string,
+    feedback: 'up' | 'down'
+  ): Promise<ChatMessage> {
+    const response = await fetch(`${BASE_URL}/api/chat/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messageId, feedback }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to save feedback.');
+    }
+
+    const data = await response.json();
+    return mapMessage(data.message);
   },
 };

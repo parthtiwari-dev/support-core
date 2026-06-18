@@ -31,6 +31,21 @@ export const chatRepository = {
     return result.rows[0];
   },
 
+  async setMessageFeedback(
+    messageId: string,
+    feedback: 'up' | 'down'
+  ): Promise<Message | null> {
+    const result = await pool.query<Message>(
+      `UPDATE messages
+       SET feedback = $2
+       WHERE id = $1 AND sender = 'ai'
+       RETURNING *`,
+      [messageId, feedback]
+    );
+
+    return result.rows[0] ?? null;
+  },
+
   async getMessages(conversationId: string): Promise<Message[]> {
     const result = await pool.query<Message>(
       `SELECT * FROM messages

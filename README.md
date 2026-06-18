@@ -92,6 +92,7 @@ The migration creates:
 
 - `conversations`
 - `messages`
+- nullable AI message feedback (`up` / `down`)
 - indexes for conversation lookup and message ordering
 
 ### Run Locally
@@ -132,6 +133,13 @@ PostgreSQL stores conversations/messages.
 OpenAI streams assistant replies through the backend.
 ```
 
+API endpoints:
+
+- `POST /api/chat/message` streams an AI reply over SSE
+- `GET /api/chat/history/:sessionId` loads persisted chat history
+- `POST /api/chat/feedback` stores `up` / `down` feedback on AI messages
+- `GET /health` checks that the API and PostgreSQL are both reachable
+
 Layer contract:
 
 - `routes/` maps URLs only.
@@ -171,6 +179,11 @@ Named LLM failure modes:
 
 ## Roadmap Checklist Status
 
+- Welcome message and FAQ quick replies: implemented in `MessageList`
+- Grouped timestamps: implemented in `MessageBubble`
+- AI message feedback: implemented end-to-end with migration, route, service, repository, and UI
+- New chat reset: implemented in the widget header
+- Health check: `/health` verifies PostgreSQL with `SELECT 1`
 - Failure taxonomy: implemented in `llm.service.ts`
 - Context window budget: implemented in `buildContextWindow`
 - Request deduplication: implemented with `useRef` in `useChat`
@@ -192,19 +205,30 @@ Named LLM failure modes:
 
 ## Deployment Notes
 
-Backend on Railway:
+Recommended demo setup:
 
-- Set root directory to `backend`
-- Add PostgreSQL
-- Set `DATABASE_URL`, `OPENAI_API_KEY`, `FRONTEND_URL`, and `NODE_ENV=production`
-- Run `npm run build`
-- Start with `npm start`
-- Run migrations with `npm run migrate`
+- Database: Supabase PostgreSQL
+- Backend: Render Web Service
+- Frontend: Vercel
+
+Backend on Render:
+
+- Root directory: `backend`
+- Build command: `npm install && npm run build && npm run migrate`
+- Start command: `npm start`
+- Health check path: `/health`
+- Environment variables:
+  - `DATABASE_URL`
+  - `DATABASE_SSL=true`
+  - `OPENAI_API_KEY`
+  - `FRONTEND_URL`
+  - `NODE_ENV=production`
+- Migrations are idempotent and run during the build command on each deploy.
 
 Frontend on Vercel:
 
 - Set root directory to `frontend`
-- Set `VITE_API_URL` to the Railway backend URL
+- Set `VITE_API_URL` to the Render backend URL
 - Deploy normally
 
-After deploying the frontend, update Railway `FRONTEND_URL` to the Vercel URL.
+After deploying the frontend, update Render `FRONTEND_URL` to the Vercel URL.

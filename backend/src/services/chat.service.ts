@@ -35,9 +35,10 @@ export const chatService = {
     return { conversationId, generator };
   },
 
-  async persistAIMessage(conversationId: string, text: string): Promise<void> {
-    await chatRepository.saveMessage(conversationId, 'ai', text);
+  async persistAIMessage(conversationId: string, text: string): Promise<Message> {
+    const message = await chatRepository.saveMessage(conversationId, 'ai', text);
     await chatRepository.touchConversation(conversationId);
+    return message;
   },
 
   async getHistory(sessionId: string): Promise<Message[] | null> {
@@ -46,5 +47,12 @@ export const chatService = {
     const conv = await chatRepository.findConversation(sessionId);
     if (!conv) return null;
     return chatRepository.getMessages(sessionId);
+  },
+
+  async setFeedback(
+    messageId: string,
+    feedback: 'up' | 'down'
+  ): Promise<Message | null> {
+    return chatRepository.setMessageFeedback(messageId, feedback);
   },
 };

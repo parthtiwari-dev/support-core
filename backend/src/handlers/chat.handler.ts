@@ -38,8 +38,8 @@ export const chatHandler = {
         sendSSE(res, { type: 'chunk', content: chunk });
       }
 
-      await chatService.persistAIMessage(conversationId, fullReply);
-      sendSSE(res, { type: 'done', sessionId: conversationId });
+      const aiMessage = await chatService.persistAIMessage(conversationId, fullReply);
+      sendSSE(res, { type: 'done', sessionId: conversationId, message: aiMessage });
     } catch (err) {
       const llmErr = classifyOpenAIError(err);
       sendSSE(res, { type: 'error', ...llmErr });
@@ -66,5 +66,26 @@ export const chatHandler = {
     }
 
     res.json({ messages, sessionId });
+  },
+
+  async handleFeedback(req: Request, res: Response): Promise<void> {
+    const { messageId, feedback } = req.body as {
+      messageId: string;
+      feedback: 'up' | 'down';
+    };
+
+    try {
+      const message = await chatService.setFeedback(messageId, feedback);
+
+      if (!message) {
+        res.status(404).json({ error: 'AI message not found' });
+        return;
+      }
+
+      res.json({ message });
+    } catch (err) {
+      console.error('DB error in setFeedback:', err);
+      res.status(500).json({ error: 'Failed to save message feedback.' });
+    }
   },
 };

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { Pool } from 'pg';
 import { config } from '../config';
@@ -10,12 +10,17 @@ async function main(): Promise<void> {
     ssl: config.databaseSsl,
   });
 
-  const migrationPath = path.resolve(process.cwd(), 'src/db/migrations/001_init.sql');
-  const sql = await readFile(migrationPath, 'utf8');
+  const migrationsDir = path.resolve(process.cwd(), 'src/db/migrations');
+  const migrationFiles = (await readdir(migrationsDir))
+    .filter((file) => file.endsWith('.sql'))
+    .sort();
 
   try {
-    await pool.query(sql);
-    console.log('Migration applied: 001_init.sql');
+    for (const file of migrationFiles) {
+      const sql = await readFile(path.join(migrationsDir, file), 'utf8');
+      await pool.query(sql);
+      console.log(`Migration applied: ${file}`);
+    }
   } finally {
     await pool.end();
   }

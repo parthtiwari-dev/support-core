@@ -40,6 +40,10 @@ textarea {
 }
 
 .chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 14px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.18);
   background: #0f766e;
@@ -59,6 +63,34 @@ textarea {
   opacity: 0.86;
 }
 
+.new-chat-button {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.new-chat-button:hover:not(:disabled),
+.new-chat-button:focus-visible {
+  background: rgba(255, 255, 255, 0.22);
+  outline: none;
+}
+
+.new-chat-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .message-list {
   flex: 1;
   overflow-y: auto;
@@ -66,17 +98,66 @@ textarea {
   background: #f8fafc;
 }
 
-.message-bubble {
+.welcome-panel {
   display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.welcome-message {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-width: 88%;
+  padding: 12px 14px;
+  border-radius: 16px 16px 16px 4px;
+  background: #eef2f6;
+  color: #1f2937;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.welcome-message strong {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.quick-replies {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.quick-replies button {
+  min-height: 38px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #ffffff;
+  color: #174441;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.quick-replies button:hover,
+.quick-replies button:focus-visible {
+  border-color: #0f766e;
+  background: #ecfdf5;
+  outline: none;
+}
+
+.message-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   margin-bottom: 12px;
 }
 
-.message-bubble.user {
-  justify-content: flex-end;
-}
-
-.message-bubble.ai {
-  justify-content: flex-start;
+.message-row.user {
+  align-items: flex-end;
 }
 
 .message-text {
@@ -89,16 +170,62 @@ textarea {
   overflow-wrap: anywhere;
 }
 
-.message-bubble.user .message-text {
+.message-row.user .message-text {
   border-bottom-right-radius: 4px;
   background: #0f766e;
   color: #ffffff;
 }
 
-.message-bubble.ai .message-text {
+.message-row.ai .message-text {
   border-bottom-left-radius: 4px;
   background: #eef2f6;
   color: #1f2937;
+}
+
+.message-timestamp {
+  max-width: 75%;
+  margin-top: 4px;
+  color: #697586;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.message-feedback {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.message-feedback button {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d7dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.message-feedback button:hover:not(:disabled),
+.message-feedback button:focus-visible {
+  border-color: #0f766e;
+  color: #0f766e;
+  outline: none;
+}
+
+.message-feedback button.active {
+  border-color: #0f766e;
+  background: #ccfbf1;
+  color: #0f766e;
+}
+
+.message-feedback button:disabled {
+  cursor: default;
 }
 
 .streaming-cursor {
@@ -119,12 +246,35 @@ textarea {
 }
 
 .chat-error {
-  padding: 9px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px 9px 16px;
   border-top: 1px solid #fecaca;
   background: #fef2f2;
   color: #b91c1c;
   font-size: 13px;
   line-height: 1.4;
+}
+
+.chat-error button {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #991b1b;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.chat-error button:hover,
+.chat-error button:focus-visible {
+  background: #fee2e2;
+  outline: none;
 }
 
 .chat-input {
@@ -208,5 +358,9 @@ textarea {
     max-height: none;
     border: 0;
     border-radius: 0;
+  }
+
+  .quick-replies {
+    grid-template-columns: 1fr;
   }
 }
