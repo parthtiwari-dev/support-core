@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS messages (
     conversation_id UUID         NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
     sender          VARCHAR(4)   NOT NULL CHECK (sender IN ('user', 'ai')),
     text            TEXT         NOT NULL,
+    feedback        VARCHAR(4)   DEFAULT NULL CHECK (feedback IN ('up', 'down')),
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
