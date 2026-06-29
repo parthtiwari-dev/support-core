@@ -7,6 +7,8 @@ export const pool = new Pool({
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 2_000,
   ssl: config.databaseSsl,
+  // Supabase pooler requires this
+  keepAlive: true,
 });
 
 pool.on('error', (err) => {
@@ -14,12 +16,3 @@ pool.on('error', (err) => {
 });
 
 
-export const pool = new Pool({
-  connectionString: config.databaseUrl,
-  max: 10,
-  idleTimeoutMillis: 30_000,
-  connectionTimeoutMillis: 2_000,
-  ssl: config.databaseSsl,
-  // Supabase pooler requires this
-  keepAlive: true,
-});
