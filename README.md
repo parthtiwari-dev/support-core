@@ -4,8 +4,9 @@ AI-powered live chat widget for Lumio, a fictional D2C smart home lighting brand
 Users can ask about products, shipping, returns, refunds, warranty, discounts, and support.
 Conversations persist across reloads by storing a session ID in `localStorage` and loading history from PostgreSQL.
 
-Live demo: not deployed yet  
-Backend: not deployed yet
+Live demo: https://support-core-nine.vercel.app  
+Backend: https://support-core.onrender.com  
+GitHub: https://github.com/parthtiwari-dev/support-core
 
 ## Tech Stack
 
@@ -13,7 +14,7 @@ Backend: not deployed yet
 - Backend: Node.js, Express, TypeScript
 - Database: PostgreSQL
 - LLM: OpenAI GPT-4o-mini with SSE streaming
-- Deployment target: Railway for backend and database, Vercel for frontend
+- Deployment: Render for backend, Vercel for frontend, Supabase for PostgreSQL
 
 ## Local Setup
 
@@ -205,11 +206,11 @@ Named LLM failure modes:
 
 ## Deployment Notes
 
-Recommended demo setup:
+Live setup:
 
 - Database: Supabase PostgreSQL
-- Backend: Render Web Service
-- Frontend: Vercel
+- Backend: Render Web Service - https://support-core.onrender.com
+- Frontend: Vercel - https://support-core-nine.vercel.app
 
 Backend on Render:
 
@@ -232,3 +233,11 @@ Frontend on Vercel:
 - Deploy normally
 
 After deploying the frontend, update Render `FRONTEND_URL` to the Vercel URL.
+
+**Gotcha worth documenting:** CORS origin matching is byte-exact. Setting `FRONTEND_URL` with a trailing slash (`https://app.vercel.app/`) causes the browser to reject every request with a CORS error, even though the backend is healthy and the URLs are "the same" to a human eye. The `/health` endpoint will still respond fine since simple GETs don't trigger a CORS preflight, which makes this easy to misdiagnose as a backend or network issue. Set `FRONTEND_URL` with no trailing slash.
+
+## Deviations From Spec
+
+The assignment describes `POST /chat/message` returning `{ reply, sessionId }` as a single JSON response. This project implements `POST /api/chat/message` instead, streaming the reply over Server-Sent Events rather than returning one blocking JSON payload.
+
+This was a deliberate choice, not an oversight: streaming gives a noticeably better chat UX (the user sees the agent typing instead of staring at a blank bubble for several seconds), and it is closer to how a real production chat widget like Spur's would behave. The `/api` prefix is a normal REST convention to namespace API routes separately from any future static assets or other route groups. `GET /api/chat/history/:sessionId` and `POST /api/chat/feedback` follow the same prefix for consistency.
